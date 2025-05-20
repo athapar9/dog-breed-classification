@@ -3,14 +3,13 @@ import pandas as pd
 from PIL import Image
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-
-from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Model, load_model
-from keras.layers import Dense, GlobalAveragePooling2D, Dropout, BatchNormalization
-from keras.applications.resnet_v2 import ResNet50V2, preprocess_input
-from keras.optimizers import RMSprop
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping
-
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report, accuracy_score
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout, BatchNormalization
+from tensorflow.keras.applications.resnet_v2 import ResNet50V2, preprocess_input
+from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
 from ultralytics import YOLO
 import os
 
@@ -23,6 +22,7 @@ learning_rate = 1e-3
 # load labels
 labels_df = pd.read_csv("data/labels.csv")
 labels_df['img_file'] = labels_df['id'].apply(lambda x: x + ".jpg")
+
 
 # Initialize YOLO model for dog detection
 yolo_model = YOLO('yolov8n.pt')
@@ -128,3 +128,13 @@ with open("encoder.pkl", "wb") as f:
     pickle.dump(encoder, f)
 
 print("Training complete and model saved.")
+
+y_prob = model.predict(x_test, batch_size=32, verbose=1)
+y_pred = np.argmax(y_prob, axis=1)
+rep = classification_report(y_test, y_pred, target_names=encoder.classes_, digits=3)
+acc = f"\nTop-1 accuracy : {accuracy_score(y_test, y_pred):.4f}\n"
+print(rep)
+print(acc)
+with open("metrics.txt", "w") as f:
+    f.write(rep)
+    f.write(acc)
